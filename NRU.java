@@ -720,7 +720,7 @@ public class NRU {
                     System.out.println("ESC:");
                     List list = new ArrayList(100);
                     for (int i = 0; i < Ref_string.length; i++) {
-                        list.add(i);
+                        list.add(Ref_string[i]);
                     }
                     Enhanced2ndChance m = new Enhanced2ndChance(no_of_frames, list);
                     m.ESC();
