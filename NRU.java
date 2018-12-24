@@ -233,6 +233,129 @@ class Enhanced2ndChance {
 
 }
 
+class SC {
+
+    //number of frames
+    int numberOfFrames;
+    //actual frames
+    char[] frame;
+    //reference bit for each frame
+    boolean[] referenceBit;
+    //sequence of reference string
+    String sequence = new String();
+    //number of page faults
+    public int pageFault = 0;
+    //current page string
+    char page;
+    //flag to check if pointer should point to 1st frame (queue rotation)
+    boolean flag = false;
+    //scanner to get input from user
+    Scanner sc = new Scanner(System.in);
+
+    // second chance algorithm implementation 
+    public int getFaults() {
+        return this.pageFault;
+    }
+
+    public void arrayTraverse() {
+        //run the algorithm till the reference string ends
+        while (!sequence.isEmpty()) {
+            for (int pointer = 0; pointer < numberOfFrames; pointer++) {
+                //make sure reference string is not empty
+                if (!sequence.isEmpty()) {
+
+                    //check if pointer finishes one complete cycle on queue
+                    if (flag) {
+                        //set pointer to 1st frame in queue
+                        pointer = 0;
+                        flag = false;
+                    }
+                    //load 1st page from reference string
+                    page = sequence.charAt(0);
+                    //change queue of frames to string to check if page already exsists in queue
+                    String test = new String(frame);
+                    //returns -1 if page doesn't exsist in the queue
+                    int t = test.indexOf(page);
+
+                    //check if the frame is empty
+                    if (frame[pointer] == 0 && t == -1) {
+                        //add page to frame
+                        addPage(pointer);
+                    } //check if the page already exists
+                    else if (t != -1) {
+
+                        //set corresponding reference bit into true
+                        referenceBit[t] = true;
+                        //decrement the pointer to stay on the same frame
+                        if (pointer == 0) {
+                            flag = true;
+                        } else {
+                            pointer--;
+                        }
+
+                        //remove page from reference string
+                        sequence = sequence.substring(1);
+
+                    } //check if the old page has a second chance
+                    else if (referenceBit[pointer] == true) {
+                        //set the corresponding reference bit to false                    
+                        referenceBit[pointer] = false;
+                        //break out of the current loop & check next frame
+                        printFrames(page, pointer + 1);
+                        continue;
+                    } //page doesn't exsist in frame, exsisting page has no second chance 
+                    else {
+                        //add candidate page to the frame, remove old page
+                        addPage(pointer);
+                    }
+                    printFrames(page, (flag == true) ? pointer : pointer + 1);
+
+                }
+            }
+
+        }
+    }// arrayTraverse
+
+    public void addPage(int index) {
+        //add page to frame
+        frame[index] = page;
+        //set corresponding reference bit into false
+        referenceBit[index] = false;
+        //remove page from reference string
+        sequence = sequence.substring(1);
+        //increment page faults
+        pageFault++;
+    }
+
+    public void inputReferenceString() {
+        System.out.println("Please enter the reference string");
+        sequence = sc.next();
+    }
+
+    public void inputNumberOfFrames(int no) {
+        System.out.println("Please enter the number of frames");
+        numberOfFrames = no;
+        frame = new char[numberOfFrames];
+        referenceBit = new boolean[numberOfFrames];
+    }
+
+    public void printFrames(char page, int pointer) {
+        System.out.println("For Page: " + page);
+        System.out.println(" -----------");
+        for (int i = 0; i < frame.length; i++) {
+            System.out.print("| " + frame[i] + " | " + referenceBit[i] + " |");
+            if (i == pointer || (pointer == frame.length && i == 0)) {
+                System.out.print("<--" + "\n");
+            } else {
+                System.out.print("\n");
+            }
+            System.out.println(" -----------");
+        }
+        System.out.println("\n");
+        System.out.println("\n");
+    }
+}
+
 public class NRU {
 
     public static void LFU(int[] pageRef, int[] frames, int[] counter, int[] frequency) {
@@ -547,47 +670,73 @@ public class NRU {
     }
 
     public static void main(String[] args) {
-        int string_length, no_of_frames;
+        int choice, string_length, no_of_frames;
         int Ref_string[], frames[];
         Scanner sc = new Scanner(System.in);
         Random rand = new Random();
         int[] counter = new int[100];
         int[] frequency = new int[100];
-        System.out.println("Enter the length of the page-reference string:");
-        string_length = sc.nextInt();
-        Ref_string = new int[string_length];
-        do {
-            no_of_frames = rand.nextInt(21);
-        } while (no_of_frames == 0);
-        // no_of_frames = 4; for test
-        frames = new int[no_of_frames];
-        Arrays.fill(frames, -1);
-        for (int i = 0; i < Ref_string.length; i++) {
-            Ref_string[i] = rand.nextInt(100);
-        }
-        for (int i = 0; i < Ref_string.length; i++) {
-            System.out.print(Ref_string[i] + " ");
-        }
-        System.out.println();
-        System.out.println("FIFO:");
-        FIFO(Ref_string, frames);
-        System.out.println("Optimal:");
-        Arrays.fill(frames, -1);
-        Optimal(Ref_string, frames);
-        System.out.println("LRU:");
-        Arrays.fill(frames, -1);
-        LRU(Ref_string, frames, counter);
-        System.out.println("LFU:");
-        Arrays.fill(frames, -1);
-        LFU(Ref_string, frames, counter, frequency);
-        System.out.println("ESC:");
-        List list = new ArrayList(100);
-        for (int i = 0; i < Ref_string.length; i++) {
-            list.add(i);
-        }
-        Enhanced2ndChance m = new Enhanced2ndChance(no_of_frames, list);
-        m.ESC();
+        while (true) {
+            System.out.println("Enter 0 for FIFO 1 for Optimal 2 for Lru 3 for LFU , 4 for Esc 5 for SC:");
+            choice = sc.nextInt();
+            System.out.println("Enter the length of the page-reference string:");
+            string_length = sc.nextInt();
+            Ref_string = new int[string_length];
+            do {
+                no_of_frames = rand.nextInt(21);
+            } while (no_of_frames == 0);
+            // no_of_frames = 4; for test
+            frames = new int[no_of_frames];
+            Arrays.fill(frames, -1);
+            for (int i = 0; i < Ref_string.length; i++) {
+                Ref_string[i] = rand.nextInt(100);
+            }
+            for (int i = 0; i < Ref_string.length; i++) {
+                System.out.print(Ref_string[i] + " ");
+            }
+            System.out.println();
+            switch (choice) {
+                case 0:
+                    System.out.println("FIFO:");
+                    Arrays.fill(frames, -1);
+                    FIFO(Ref_string, frames);
+                    break;
+                case 1:
+                    System.out.println("Optimal:");
+                    Arrays.fill(frames, -1);
+                    Optimal(Ref_string, frames);
+                    break;
+                case 2:
+                    System.out.println("LRU:");
+                    Arrays.fill(frames, -1);
+                    LRU(Ref_string, frames, counter);
+                    break;
+                case 3:
+                    System.out.println("LFU:");
+                    Arrays.fill(frames, -1);
+                    LFU(Ref_string, frames, counter, frequency);
+                    break;
+                case 4:
+                    System.out.println("ESC:");
+                    List list = new ArrayList(100);
+                    for (int i = 0; i < Ref_string.length; i++) {
+                        list.add(i);
+                    }
+                    Enhanced2ndChance m = new Enhanced2ndChance(no_of_frames, list);
+                    m.ESC();
+                    break;
+                case 5:
+                    SC s = new SC();
+                    s.inputReferenceString();
+                    s.inputNumberOfFrames(no_of_frames);
+                    s.arrayTraverse();
+                    System.out.println("Page Faults: " + s.pageFault);
+                    break;
+                default:
+                    System.out.println("You have entered the wrong number");
+                    break;
+            }
 
+        }
     }
-
 }
